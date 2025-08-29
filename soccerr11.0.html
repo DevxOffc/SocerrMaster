@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A fun, interactive 2D soccer game playable in your browser. Control your player, select a difficulty, and try to score against the computer." />
+    <meta name="keywords" content="soccer game, football game, browser game, javascript game, html5 game, 2d game" />
+    <meta name="author" content="Shivam Kumar" />
+    <link rel="icon" href="assetsbg/fv.jpg" type="image/png">
+    <title>Soccer Game</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: url("bg6.jpg") no-repeat center center;
+        background-size: cover;
+        font-family: "Arial", sans-serif;
+        overflow: hidden;
+      }
+
+      .slideshow-container {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: -1;
+      }
+
+      .slide {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-size: cover;
+        background-position: center;
+        opacity: 0;
+        transition: opacity 1.5s ease-in-out;
+      }
+
+      .slide.active {
+        opacity: 1;
+      }
+
+      .game-container {
+        position: relative;
+        width: 1000px;
+        max-width: 95%;
+        height: 600px;
+        background: #2ecc71;
+        border: 5px solid #000000;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .field {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-image: linear-gradient(
+            transparent 24%,
+            rgba(255, 255, 255, 0.1) 25%,
+            rgba(255, 255, 255, 0.1) 26%,
+            transparent 27%,
+            transparent 74%,
+            rgba(255, 255, 255, 0.1) 75%,
+            rgba(255, 255, 255, 0.1) 76%,
+            transparent 77%
+          ),
+          linear-gradient(
+            90deg,
+            transparent 24%,
+            rgba(255, 255, 255, 0.1) 25%,
+            rgba(255, 255, 255, 0.1) 26%,
+            transparent 27%,
+            transparent 74%,
+            rgba(255, 255, 255, 0.1) 75%,
+            rgba(255, 255, 255, 0.1) 76%,
+            transparent 77%
+          );
+        background-size: 50px 50px;
+      }
+
+      .center-circle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 120px;
+        height: 120px;
+        border: 3px solid rgb(255, 255, 255);
+        border-radius: 50%;
+      }
+
+      .center-line {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 2px;
+        height: 100%;
+        background: rgb(255, 255, 255);
+        transform: translateX(-50%);
+      }
+
+      .goal-area {
+        position: absolute;
+        top: 0;
+        width: 24px;
+        height: 100%;
+        background: rgba(27, 43, 59, 0.3);
+      }
+
+      .goal-area-left {
+        left: 0;
+        border-right: 3px solid white;
+      }
+
+      .goal-area-right {
+        right: 0;
+        border-left: 3px solid white;
+      }
+
+      .goal-net {
+        position: absolute;
+        top: 0;
+        width: 10px;
+        height: 100%;
+        background: repeating-linear-gradient(
+          90deg,
+          transparent,
+          transparent 2px,
+          rgba(255, 255, 255, 0.5) 2px,
+          rgba(255, 255, 255, 0.5) 4px
+        );
+      }
+
+      .goal-area-left .goal-net {
+        right: -10px;
+      }
+
+      .goal-area-right .goal-net {
+        left: -10px;
+      }
+
+      .player {
+        position: absolute;
+        width: 20px;
+        height: 80px;
+        background: #0051ff;
+        border: 2px solid #2980b9;
+        border-radius: 5px;
+        z-index: 10;
+      }
+
+      .player::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 10px;
+        height: 10px;
+        background: #ecf0f1;
+        border-radius: 50%;
+      }
+
+      .player-left {
+        left: 20px;
+      }
+
+      .player-right {
+        right: 20px;
+        background: #e74c3c;
+        border: 2px solid #c0392b;
+      }
+
+      .midfielder {
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        z-index: 5;
+      }
+
+      .midfielder::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 5px;
+        height: 5px;
+        background: #ecf0f1;
+        border-radius: 50%;
+      }
+
+      .midfielder-left {
+        background: #3498db;
+        border: 2px solid #2980b9;
+      }
+
+      .midfielder-right {
+        background: #e74c3c;
+        border: 2px solid #c0392b;
+      }
+
+      .ball {
+        position: absolute;
+        width: 21px;
+        height: 21px;
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        z-index: 15;
+      }
+
+      .ball::before {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+            circle at 30% 30%,
+            #fff 2px,
+            transparent 3px
+          ),
+          radial-gradient(circle at 70% 70%, #fff 2px, transparent 3px),
+          linear-gradient(
+            45deg,
+            transparent 40%,
+            #000 40%,
+            #000 60%,
+            transparent 60%
+          ),
+          linear-gradient(
+            -45deg,
+            transparent 40%,
+            #000 40%,
+            #000 60%,
+            transparent 60%
+          );
+        border-radius: 50%;
+      }
+
+      .score-board {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 10px 25px;
+        border-radius: 20px;
+        font-size: 24px;
+        font-weight: bold;
+        z-index: 20;
+      }
+
+      .score {
+        margin: 0 15px;
+      }
+
+      .instructions {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: rgb(0, 0, 0);
+        padding: 10px 15px;
+        border-radius: 10px;
+        font-size: 14px;
+        text-align: center;
+        max-width: 90%;
+        animation: fadeOutInstructions 1s ease 30s forwards;
+      }
+
+      @keyframes fadeOutInstructions {
+        to {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
+
+      .controls {
+        position: absolute;
+        top: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        z-index: 20;
+      }
+
+      .difficulty-controls {
+        display: flex;
+        gap: 10px;
+      }
+
+      .difficulty-btn {
+        padding: 8px 15px;
+        border: none;
+        border-radius: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+      }
+
+      .difficulty-btn.easy {
+        background: #2ecc71;
+        color: white;
+      }
+
+      .difficulty-btn.medium {
+        background: #3498db;
+        color: white;
+      }
+
+      .difficulty-btn.hard {
+        background: #f39c12;
+        color: white;
+      }
+
+      .difficulty-btn.pro {
+        background: #e74c3c;
+        color: white;
+      }
+
+      .difficulty-btn.active {
+        transform: scale(1.1);
+        box-shadow: 0 0 10px 3px rgba(255, 255, 255, 0.7);
+      }
+
+      .reset-btn {
+        padding: 8px 20px;
+        border: none;
+        border-radius: 20px;
+        background: #9b59b6;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+      }
+
+      .reset-btn:hover {
+        background: #8e44ad;
+        transform: scale(1.05);
+      }
+
+      @media (max-width: 1100px) {
+        .game-container {
+          width: 900px;
+          height: 540px;
+        }
+      }
+
+      @media (max-width: 900px) {
+        .game-container {
+          width: 800px;
+          height: 480px;
+        }
+
+        .difficulty-btn,
+        .reset-btn {
+          padding: 6px 12px;
+          font-size: 12px;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .game-container {
+          width: 95%;
+          height: 400px;
+        }
+
+        .player {
+          height: 60px;
+          width: 15px;
+        }
+
+        .midfielder {
+          width: 12px;
+          height: 12px;
+        }
+
+        .score-board {
+          font-size: 18px;
+          padding: 8px 20px;
+        }
+
+        .controls {
+          top: 60px;
+          width: 90%;
+        }
+
+        .difficulty-controls {
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+
+        .difficulty-btn,
+        .reset-btn {
+          padding: 5px 10px;
+          font-size: 11px;
+        }
+
+        .instructions {
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slideshow-container">
+      <div
+        class="slide active"
+        style="background-image: url('assetsbg/bg0.jpg')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg1.jpg')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg1.2.jpg')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg2.jpg')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg3.jpg')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg4.jpg')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg5.jpg')"
+      ></div>
+
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg6.jpg')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg7.png')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg8.jpg')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg9.jpg')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg10.jpg')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg11.jpg')"
+      ></div>
+
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg12.jpg')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg13.jpg')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg14.jpg')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg15.jpg')"
+      ></div>
+      <div
+        class="slide"
+        style="background-image: url('assetsbg/bg16.jpg')"
+      ></div>
+    </div>
+    <div class="game-container">
+      <div class="field"></div>
+      <div class="center-circle"></div>
+      <div class="center-line"></div>
+
+      <div class="goal-area goal-area-left">
+        <div class="goal-net"></div>
+      </div>
+      <div class="goal-area goal-area-right">
+        <div class="goal-net"></div>
+      </div>
+
+      <div class="player player-left" id="player-left"></div>
+      <div class="player player-right" id="player-right"></div>
+
+      <!-- Left team midfielders (up to 4 players) -->
+      <div class="midfielder midfielder-left" id="midfielder-left-1"></div>
+      <div class="midfielder midfielder-left" id="midfielder-left-2"></div>
+      <div class="midfielder midfielder-left" id="midfielder-left-3"></div>
+      <div class="midfielder midfielder-left" id="midfielder-left-4"></div>
+
+      <!-- Right team midfielders (up to 4 players) -->
+      <div class="midfielder midfielder-right" id="midfielder-right-1"></div>
+      <div class="midfielder midfielder-right" id="midfielder-right-2"></div>
+      <div class="midfielder midfielder-right" id="midfielder-right-3"></div>
+      <div class="midfielder midfielder-right" id="midfielder-right-4"></div>
+
+      <div class="ball" id="ball"></div>
+
+      <div class="score-board">
+        <div class="score" id="score-player">0</div>
+        <div>:</div>
+        <div class="score" id="score-computer">0</div>
+      </div>
+
+      <div class="controls">
+        <div class="difficulty-controls">
+          <button
+            class="difficulty-btn easy active"
+            data-speed="0.8"
+            data-players="0"
+          >
+            Easy
+          </button>
+          <button
+            class="difficulty-btn medium"
+            data-speed="1.0"
+            data-players="2"
+          >
+            Medium
+          </button>
+          <button class="difficulty-btn hard" data-speed="1.3" data-players="3">
+            Hard
+          </button>
+          <button class="difficulty-btn pro" data-speed="1.6" data-players="4">
+            Pro
+          </button>
+        </div>
+        <button class="reset-btn" id="reset-btn">Reset Game</button>
+      </div>
+
+      <div class="instructions">
+        Move your mouse to control your goalkeeper | Select difficulty level to
+        change ball speed and number of players
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const gameContainer = document.querySelector(".game-container");
+        const player = document.getElementById("player-left");
+        const computer = document.getElementById("player-right");
+        const ball = document.getElementById("ball");
+        const scorePlayer = document.getElementById("score-player");
+        const scoreComputer = document.getElementById("score-computer");
+        const difficultyButtons = document.querySelectorAll(".difficulty-btn");
+        const resetButton = document.getElementById("reset-btn");
+
+        // Create arrays for midfielders
+        const midfieldersLeft = [
+          document.getElementById("midfielder-left-1"),
+          document.getElementById("midfielder-left-2"),
+          document.getElementById("midfielder-left-3"),
+          document.getElementById("midfielder-left-4"),
+        ];
+
+        const midfieldersRight = [
+          document.getElementById("midfielder-right-1"),
+          document.getElementById("midfielder-right-2"),
+          document.getElementById("midfielder-right-3"),
+          document.getElementById("midfielder-right-4"),
+        ];
+
+        // Game constants
+        const PLAYER_HEIGHT = player.offsetHeight;
+        const BALL_SIZE = ball.offsetWidth;
+        const CONTAINER_HEIGHT = gameContainer.offsetHeight;
+        const CONTAINER_WIDTH = gameContainer.offsetWidth;
+        const MIDFIELD_LEFT_BOUNDARY = CONTAINER_WIDTH * 0.2;
+        const MIDFIELD_RIGHT_BOUNDARY = CONTAINER_WIDTH * 0.8;
+
+        // Game variables
+        let playerScore = 0;
+        let computerScore = 0;
+        let ballX = CONTAINER_WIDTH / 2 - BALL_SIZE / 2;
+        let ballY = CONTAINER_HEIGHT / 2 - BALL_SIZE / 2;
+        let baseBallSpeedX = 5;
+        let baseBallSpeedY = 4;
+        let ballSpeedX = baseBallSpeedX;
+        let ballSpeedY = baseBallSpeedY;
+        let lastTime = 0;
+        let animationFrameId;
+        let speedMultiplier = 0.8; // Default to easy mode
+        let midfieldersPerTeam = 0; // Default to easy mode (0 players)
+        let gameActive = true;
+
+        // Performance optimization variables
+        let mouseY = (CONTAINER_HEIGHT - PLAYER_HEIGHT) / 2;
+        let lastMouseUpdate = 0;
+        const MOUSE_UPDATE_INTERVAL = 16;
+
+        // Midfielder positions and movement data
+        let midfielderData = [];
+
+        // Initialize midfielders based on difficulty
+        function initializeMidfielders() {
+          midfielderData = [];
+
+          // Left midfielders
+          for (let i = 0; i < midfieldersPerTeam; i++) {
+            midfielderData.push({
+              x:
+                MIDFIELD_LEFT_BOUNDARY +
+                (i * (CONTAINER_WIDTH / 2 - 80)) /
+                  (midfieldersPerTeam > 1 ? midfieldersPerTeam - 1 : 1),
+              y: CONTAINER_HEIGHT * (0.2 + (i % 2) * 0.4),
+              dx: 1,
+              dy: 1,
+              team: "left",
+              chasing: false,
+              element: midfieldersLeft[i],
+              active: true,
+            });
+
+            // Show the midfielder
+            midfieldersLeft[i].style.display = "block";
+          }
+
+          // Hide extra midfielders for left team
+          for (let i = midfieldersPerTeam; i < 4; i++) {
+            midfieldersLeft[i].style.display = "none";
+          }
+
+          // Right midfielders
+          for (let i = 0; i < midfieldersPerTeam; i++) {
+            midfielderData.push({
+              x:
+                MIDFIELD_RIGHT_BOUNDARY -
+                (i * (CONTAINER_WIDTH / 2 - 80)) /
+                  (midfieldersPerTeam > 1 ? midfieldersPerTeam - 1 : 1),
+              y: CONTAINER_HEIGHT * (0.2 + (i % 2) * 0.4),
+              dx: -1,
+              dy: 1,
+              team: "right",
+              chasing: false,
+              element: midfieldersRight[i],
+              active: true,
+            });
+
+            // Show the midfielder
+            midfieldersRight[i].style.display = "block";
+          }
+
+          // Hide extra midfielders for right team
+          for (let i = midfieldersPerTeam; i < 4; i++) {
+            midfieldersRight[i].style.display = "none";
+          }
+
+          // Special case for easy mode (0 players)
+          if (midfieldersPerTeam === 0) {
+            for (let i = 0; i < 4; i++) {
+              midfieldersLeft[i].style.display = "none";
+              midfieldersRight[i].style.display = "none";
+            }
+          }
+        }
+
+        // Set initial positions
+        function initializeGame() {
+          // Center players vertically
+          const playerY = (CONTAINER_HEIGHT - PLAYER_HEIGHT) / 2;
+          player.style.top = `${playerY}px`;
+          computer.style.top = `${playerY}px`;
+
+          // Initialize midfielders based on current difficulty
+          initializeMidfielders();
+
+          // Center the ball
+          ball.style.left = `${ballX}px`;
+          ball.style.top = `${ballY}px`;
+
+          // Reset scores
+          playerScore = 0;
+          computerScore = 0;
+          scorePlayer.textContent = "0";
+          scoreComputer.textContent = "0";
+
+          // Reset ball speed with random direction
+          ballSpeedX = (Math.random() > 0.5 ? 1 : -1) * baseBallSpeedX;
+          ballSpeedY = (Math.random() > 0.5 ? 1 : -1) * baseBallSpeedY;
+        }
+
+        // Reset the game completely
+        function resetGame() {
+          // Cancel any existing animation frame
+          if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+          }
+
+          // Reset game state
+          playerScore = 0;
+          computerScore = 0;
+          ballX = CONTAINER_WIDTH / 2 - BALL_SIZE / 2;
+          ballY = CONTAINER_HEIGHT / 2 - BALL_SIZE / 2;
+
+          // Reinitialize the game
+          initializeGame();
+
+          // Restart the game loop
+          lastTime = 0;
+          animationFrameId = requestAnimationFrame(updateBall);
+        }
+
+        // Set difficulty level
+        function setDifficulty(multiplier, players) {
+          speedMultiplier = multiplier;
+          midfieldersPerTeam = players;
+
+          // Update active button
+          difficultyButtons.forEach((btn) => {
+            if (parseInt(btn.dataset.players) === players) {
+              btn.classList.add("active");
+            } else {
+              btn.classList.remove("active");
+            }
+          });
+
+          // Reset the game with new settings
+          resetGame();
+        }
+
+        // Add event listeners to difficulty buttons
+        difficultyButtons.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            setDifficulty(
+              parseFloat(btn.dataset.speed),
+              parseInt(btn.dataset.players)
+            );
+          });
+        });
+
+        // Add event listener to reset button
+        resetButton.addEventListener("click", resetGame);
+
+        // Update midfielder positions with optimized logic
+        function updateMidfielders() {
+          for (let i = 0; i < midfielderData.length; i++) {
+            const data = midfielderData[i];
+            if (!data.active) continue;
+
+            const mSize = parseInt(window.getComputedStyle(data.element).width);
+
+            // Calculate distance to ball
+            const ballCenterX = ballX + BALL_SIZE / 2;
+            const ballCenterY = ballY + BALL_SIZE / 2;
+            const mCenterX = data.x + mSize / 2;
+            const mCenterY = data.y + mSize / 2;
+
+            const distToBall = Math.sqrt(
+              Math.pow(ballCenterX - mCenterX, 2) +
+                Math.pow(ballCenterY - mCenterY, 2)
+            );
+
+            // Define boundaries based on team
+            const minX = data.team === "left" ? 40 : CONTAINER_WIDTH / 2;
+            const maxX =
+              data.team === "left" ? CONTAINER_WIDTH / 2 : CONTAINER_WIDTH - 40;
+
+            // Chase ball if it's in range (120px) and in their territory
+            if (
+              distToBall < 120 &&
+              ((data.team === "left" && ballX < CONTAINER_WIDTH / 2) ||
+                (data.team === "right" && ballX > CONTAINER_WIDTH / 2))
+            ) {
+              data.chasing = true;
+
+              // Move toward ball with optimized path
+              const angle = Math.atan2(
+                ballCenterY - mCenterY,
+                ballCenterX - mCenterX
+              );
+              data.dx = Math.cos(angle) * 2.5;
+              data.dy = Math.sin(angle) * 2.5;
+            } else {
+              data.chasing = false;
+
+              // Normal wandering behavior with optimized random movement
+              if (Math.random() < 0.02) {
+                data.dx += (Math.random() - 0.5) * 0.7;
+                data.dy += (Math.random() - 0.5) * 0.7;
+
+                // Normalize speed
+                const speed = Math.sqrt(data.dx * data.dx + data.dy * data.dy);
+                if (speed > 0) {
+                  data.dx = (data.dx / speed) * 1.5;
+                  data.dy = (data.dy / speed) * 1.5;
+                }
+              }
+            }
+
+            // Update position
+            data.x += data.dx;
+            data.y += data.dy;
+
+            // Boundary checking with optimized constraints
+            if (data.x < minX || data.x > maxX - mSize) {
+              data.dx *= -0.8;
+              data.x = Math.max(minX, Math.min(data.x, maxX - mSize));
+            }
+
+            if (data.y < 20 || data.y > CONTAINER_HEIGHT - 20 - mSize) {
+              data.dy *= -0.8;
+              data.y = Math.max(
+                20,
+                Math.min(data.y, CONTAINER_HEIGHT - 20 - mSize)
+              );
+            }
+
+            // Update DOM position with direct style manipulation for performance
+            data.element.style.left = `${data.x}px`;
+            data.element.style.top = `${data.y}px`;
+
+            // Visual indicator when chasing
+            if (data.chasing) {
+              data.element.style.boxShadow = "0 0 8px 2px yellow";
+              data.element.style.transform = "scale(1.3)";
+            } else {
+              data.element.style.boxShadow = "none";
+              data.element.style.transform = "scale(1)";
+            }
+          }
+        }
+
+        // Optimized collision detection
+        function checkMidfielderCollision() {
+          for (let i = 0; i < midfielderData.length; i++) {
+            const data = midfielderData[i];
+            if (!data.active) continue;
+
+            const mSize = parseInt(window.getComputedStyle(data.element).width);
+
+            // Simple AABB collision detection
+            if (
+              ballX + BALL_SIZE > data.x &&
+              ballX < data.x + mSize &&
+              ballY + BALL_SIZE > data.y &&
+              ballY < data.y + mSize
+            ) {
+              // Determine bounce direction based on which team the midfielder is on
+              if (data.team === "left") {
+                ballSpeedX = Math.abs(ballSpeedX) * 1.1;
+              } else {
+                ballSpeedX = -Math.abs(ballSpeedX) * 1.1;
+              }
+
+              // Add some vertical randomness
+              ballSpeedY += (Math.random() - 0.5) * 4;
+
+              // Only process one collision per frame for performance
+              break;
+            }
+          }
+        }
+
+        // Optimized mouse movement handler
+        gameContainer.addEventListener("mousemove", (e) => {
+          if (!gameActive) return;
+
+          const now = Date.now();
+          if (now - lastMouseUpdate < MOUSE_UPDATE_INTERVAL) return;
+
+          lastMouseUpdate = now;
+
+          const rect = gameContainer.getBoundingClientRect();
+          mouseY = e.clientY - rect.top - PLAYER_HEIGHT / 2;
+
+          // Keep player within the container
+          const maxY = CONTAINER_HEIGHT - PLAYER_HEIGHT;
+          mouseY = Math.max(0, Math.min(mouseY, maxY));
+
+          // Update player position immediately
+          player.style.top = `${mouseY}px`;
+        });
+
+        // Fast computer AI
+        function computerAI() {
+          const computerY = parseInt(
+            computer.style.top || (CONTAINER_HEIGHT - PLAYER_HEIGHT) / 2
+          );
+          const ballCenterY = ballY + BALL_SIZE / 2;
+          const computerCenterY = computerY + PLAYER_HEIGHT / 2;
+
+          // Fast reaction with minimal delay
+          const speed = 0.08;
+          let targetY = computerY;
+
+          if (Math.abs(computerCenterY - ballCenterY) > 5) {
+            if (computerCenterY < ballCenterY) {
+              targetY = computerY + speed * (ballCenterY - computerCenterY);
+            } else {
+              targetY = computerY - speed * (computerCenterY - ballCenterY);
+            }
+          }
+
+          // Keep computer within the container
+          const maxY = CONTAINER_HEIGHT - PLAYER_HEIGHT;
+          computer.style.top = `${Math.max(0, Math.min(targetY, maxY))}px`;
+        }
+
+        // Optimized game loop
+        function updateBall(timestamp) {
+          if (!gameActive) return;
+
+          animationFrameId = requestAnimationFrame(updateBall);
+
+          if (!lastTime) lastTime = timestamp;
+          const deltaTime = timestamp - lastTime;
+          lastTime = timestamp;
+
+          // Skip frame if delta time is too large (tab was inactive)
+          if (deltaTime > 100) return;
+
+          // Apply speed multiplier
+          const currentBallSpeedX = ballSpeedX * speedMultiplier;
+          const currentBallSpeedY = ballSpeedY * speedMultiplier;
+
+          // Update midfielder positions (only if there are midfielders)
+          if (midfieldersPerTeam > 0) {
+            updateMidfielders();
+          }
+
+          // Move the ball
+          ballX += currentBallSpeedX;
+          ballY += currentBallSpeedY;
+
+          // Check collisions with midfielders (only if there are midfielders)
+          if (midfieldersPerTeam > 0) {
+            checkMidfielderCollision();
+          }
+
+          // Ball collision with top and bottom
+          if (ballY <= 0 || ballY + BALL_SIZE >= CONTAINER_HEIGHT) {
+            ballSpeedY = -ballSpeedY;
+          }
+
+          // Ball collision with player (left)
+          const playerY = parseInt(player.style.top);
+          if (
+            ballX <= 40 &&
+            ballX >= 20 &&
+            ballY + BALL_SIZE >= playerY &&
+            ballY <= playerY + PLAYER_HEIGHT
+          ) {
+            ballSpeedX = Math.abs(ballSpeedX) * 1.1;
+            // Add angle based on where the ball hit the player
+            const hitPosition =
+              (ballY + BALL_SIZE / 2 - playerY) / PLAYER_HEIGHT;
+            ballSpeedY = (hitPosition - 0.5) * 10;
+          }
+
+          // Ball collision with computer (right)
+          const computerY = parseInt(computer.style.top);
+          if (
+            ballX + BALL_SIZE >= CONTAINER_WIDTH - 40 &&
+            ballX + BALL_SIZE <= CONTAINER_WIDTH - 20 &&
+            ballY + BALL_SIZE >= computerY &&
+            ballY <= computerY + PLAYER_HEIGHT
+          ) {
+            ballSpeedX = -Math.abs(ballSpeedX) * 1.1;
+            // Add angle based on where the ball hit the computer
+            const hitPosition =
+              (ballY + BALL_SIZE / 2 - computerY) / PLAYER_HEIGHT;
+            ballSpeedY = (hitPosition - 0.5) * 10;
+          }
+
+          // Goal check (left) - full width goal
+          if (ballX <= 0) {
+            // Computer scores
+            computerScore++;
+            scoreComputer.textContent = computerScore;
+            resetBall();
+          }
+
+          // Goal check (right) - full width goal
+          if (ballX + BALL_SIZE >= CONTAINER_WIDTH) {
+            // Player scores
+            playerScore++;
+            scorePlayer.textContent = playerScore;
+            resetBall();
+          }
+
+          // Update ball position
+          ball.style.left = `${ballX}px`;
+          ball.style.top = `${ballY}px`;
+
+          // Update computer AI
+          computerAI();
+        }
+
+        // Reset ball after a goal
+        function resetBall() {
+          ballX = CONTAINER_WIDTH / 2 - BALL_SIZE / 2;
+          ballY = CONTAINER_HEIGHT / 2 - BALL_SIZE / 2;
+
+          // Randomize direction but ensure it goes toward the player who was just scored on
+          if (ballSpeedX > 0) {
+            ballSpeedX = -baseBallSpeedX;
+          } else {
+            ballSpeedX = baseBallSpeedX;
+          }
+
+          ballSpeedY = (Math.random() > 0.5 ? 1 : -1) * baseBallSpeedY;
+        }
+
+        // Start the game
+        initializeGame();
+        animationFrameId = requestAnimationFrame(updateBall);
+
+        // Clean up animation frame when needed
+        window.addEventListener("beforeunload", () => {
+          gameActive = false;
+          if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+          }
+        });
+      });
+    </script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const slides = document.querySelectorAll(".slide");
+        let currentSlide = 0;
+
+        // Function to show next slide with transition
+        function nextSlide() {
+          // Remove active class from current slide
+          slides[currentSlide].classList.remove("active");
+
+          // Calculate next slide index
+          currentSlide = (currentSlide + 1) % slides.length;
+
+          // Add active class to next slide
+          slides[currentSlide].classList.add("active");
+        }
+
+        // Start the slideshow with 16 second intervals
+        setInterval(nextSlide, 16000);
+      });
+    </script>
+  </body>
+</html>
